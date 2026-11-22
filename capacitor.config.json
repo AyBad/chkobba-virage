@@ -1,0 +1,7 @@
+{
+  "appId": "com.aybad.chkobbavirage",
+  "appName": "Chkobba des virages",
+  "webDir": "dist",
+  "backgroundColor": "#05060d",
+  "android": { "allowMixedContent": false, "webContentsDebuggingEnabled": false }
+}

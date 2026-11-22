@@ -1,0 +1,63 @@
+name: Build Android APK
+on:
+  push:
+    branches: [android]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      # vraie clé d'importation Google Play (secrets) ; sans elle, la clé de test du dépôt est utilisée
+      - name: Upload key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
+          fi
+      - run: npx cap sync android
+      - name: Build APK
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug bundleRelease --no-daemon --stacktrace
+      - run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk ChkobbaVirage.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab ChkobbaVirage.aab
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChkobbaVirage-apk
+          path: |
+            ChkobbaVirage.apk
+            ChkobbaVirage.aab
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-b${{ github.run_number }}
+          name: Chkobba des virages – Android build ${{ github.run_number }}
+          body: |
+            APK de test (build ${{ github.run_number }}, commit ${{ github.sha }}).
+            Lien permanent vers la dernière version : https://github.com/${{ github.repository }}/releases/latest/download/ChkobbaVirage.apk
+          files: |
+            ChkobbaVirage.apk
+            ChkobbaVirage.aab
+          make_latest: true

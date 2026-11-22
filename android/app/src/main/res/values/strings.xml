@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chkobba des virages</string>
+    <string name="title_activity_main">Chkobba des virages</string>
+    <string name="package_name">com.aybad.chkobbavirage</string>
+    <string name="custom_url_scheme">com.aybad.chkobbavirage</string>
+</resources>
